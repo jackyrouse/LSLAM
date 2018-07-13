@@ -7,8 +7,7 @@
 
 namespace MySubmapdata
 {
-namespace
-{
+
 
 //Point
 template <class ContainerAllocator>
@@ -210,6 +209,6 @@ struct My_SubmapResponse
 };
 typedef My_SubmapResponse MySubmapResponse;
 
-}
+
 }
 #endif //TESTLASER_SUBMAPDATA_H
