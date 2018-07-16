@@ -55,23 +55,24 @@ milliseconds_sleep(unsigned long mSec)
 }
 
 void
-mapcreator(cartographer_ros::Node* nodeptr)
+mapcreator(cartographer_ros::Node *nodeptr)
 {
     const double resolution_ = 0.05;
     int tmptag = 0;
-    while(true)
+    while (true)
     {
         milliseconds_sleep(300);
         nodeptr->GetMap();
-        if(nodeptr->submap_slices_.empty()||nodeptr->last_frame_id_.empty())
+        if (nodeptr->submap_slices_.empty() || nodeptr->last_frame_id_.empty())
         {
             continue;
         }
         ::cartographer::common::MutexLocker locker(&mutex_);
         auto painted_slices = PaintSubmapSlices(nodeptr->submap_slices_, resolution_);
         std::string savemapstr;
-        savemapstr = tmptag;
-        savemapstr += ".png";
+        std::stringstream tmpstream;
+        tmpstream << "//home//jacky//Downloads//test//" << tmptag << ".png";
+        savemapstr = tmpstream.str();
         tmptag++;
         cairo_surface_write_to_png(painted_slices.surface.get(), savemapstr.data());
     }
@@ -87,8 +88,8 @@ Run()
     std::tie(node_options, trajectory_options) =
         cartographer_ros::LoadOptions(FLAGS_configuration_directory, FLAGS_configuration_basename);
 
-    std::cout<<node_options.map_frame<<std::endl;
-    std::cout<<trajectory_options.published_frame<<std::endl;
+    std::cout << node_options.map_frame << std::endl;
+    std::cout << trajectory_options.published_frame << std::endl;
 
     auto map_builder =
         cartographer::common::make_unique<cartographer::mapping::MapBuilder>(node_options.map_builder_options);
@@ -116,7 +117,8 @@ Run()
     node.FinishAllTrajectories();
     node.RunFinalOptimization();
 
-    if (!FLAGS_save_state_filename.empty()) {
+    if (!FLAGS_save_state_filename.empty())
+    {
         node.SerializeState(FLAGS_save_state_filename);
     }
 }
