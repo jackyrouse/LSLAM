@@ -13,6 +13,8 @@ include_directories(include/
         ${Boost_INCLUDE_DIRS}
         ydlidar)
 
+AUX_SOURCE_DIRECTORY(third AllPart)
+
 add_executable(LSLAM main.cpp
         include/cartographer_ros/node_constants.cc
         include/cartographer_ros/trajectory_options.cc
@@ -23,7 +25,8 @@ add_executable(LSLAM main.cpp
         include/cartographer_ros/tf_bridge.cc
         include/cartographer_ros/map_builder_bridge.cc
         include/cartographer_ros/sensor_bridge.cc
-        include/cartographer_ros/node.cc)
+        include/cartographer_ros/node.cc
+        ${AllPart})
 
 
 target_link_libraries(${PROJECT_NAME} PUBLIC cartographer ${testlaser_LIBRARIES} ${Boost_LIBRARIES} pthread)

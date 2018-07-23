@@ -11,6 +11,9 @@
 #include "IMU_PandCspace/dealimudata.h"
 #include "LASER_PandCspace/deallaserdata.h"
 
+#include "third/TCPClient.h"
+#include "third/pub.h"
+
 DEFINE_string(configuration_directory, "",
               "First directory in which configuration files are searched, "
               "second is always the Cartographer installation to allow "
@@ -37,6 +40,10 @@ namespace
 
 std::string FLAGS_configuration_directory;
 std::string FLAGS_configuration_basename;
+
+TCPClient tcp_client;
+std::string server_ip = "192.168.1.113";
+int server_port = 11999;
 
 ::cartographer::common::Mutex mutex_;
 
@@ -75,6 +82,54 @@ mapcreator(cartographer_ros::Node *nodeptr)
         savemapstr = tmpstream.str();
         tmptag++;
         cairo_surface_write_to_png(painted_slices.surface.get(), savemapstr.data());
+
+        int iport = 11999;
+        std::string serverip= "127.0.0.1";
+        std::cout<<"send file : "<<savemapstr<<std::endl;
+
+        if(1 == send_work(serverip.data(), iport, savemapstr.data()))
+        {
+            std::cout<<"send success!"<<std::endl;
+        }
+
+
+        /*
+        tcp_client.Send("newmap");
+        string tmprec = tcp_client.receive();
+        if(!tmprec.compare("ok1"))
+        {
+            //begin to send png
+            fstream sendfile;
+            sendfile.open(savemapstr.data(), ios::binary|ios::in);
+            sendfile.seekg(0, sendfile.end);
+            int srcsize = sendfile.tellg();
+            char* tmpsendbuf = new char[1024];
+            if(!srcsize)
+            {
+                memset(tmpsendbuf, 0x00, 1024);
+                memcpy(tmpsendbuf, &srcsize, 4);
+                tcp_client.Send(tmpsendbuf, 4);
+                tmprec = tcp_client.receive();
+                if(!tmprec.compare("ok2"))
+                {
+                    while(!sendfile.eof())
+                    {
+                        memset(tmpsendbuf, 0x00, 1024);
+                        sendfile.read(tmpsendbuf, 1024);
+                        tcp_client.Send(tmpsendbuf, sendfile.gcount());
+                        tmprec = tcp_client.receive();
+                        if(tmprec.compare("ok3"))
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+            sendfile.close();
+        }
+        */
+        //remove(savemapstr.data());
+
     }
     return;
 }
@@ -82,6 +137,11 @@ mapcreator(cartographer_ros::Node *nodeptr)
 void
 Run()
 {
+/*    if(!tcp_client.setup(server_ip, server_port))
+    {
+        std::cout<<"display server cannot connected, exit!"<<std::endl;
+    }
+*/
     constexpr double kTfBufferCacheTimeInSeconds = 10.;
     NodeOptions node_options;
     TrajectoryOptions trajectory_options;
