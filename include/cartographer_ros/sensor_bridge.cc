@@ -30,7 +30,8 @@ using carto::transform::Rigid3d;
 namespace
 {
 
-const std::string &CheckNoLeadingSlash(const std::string &frame_id)
+const std::string &
+CheckNoLeadingSlash(const std::string &frame_id)
 {
     if (frame_id.size() > 0)
     {
@@ -52,7 +53,8 @@ SensorBridge::SensorBridge(
       tf_bridge_(tracking_frame, lookup_transform_timeout_sec),
       trajectory_builder_(trajectory_builder) {}
 
-std::unique_ptr<carto::sensor::ImuData> SensorBridge::ToImuData(const IMU_PandCspace::IMUMessage& msg)
+std::unique_ptr<carto::sensor::ImuData>
+SensorBridge::ToImuData(const IMU_PandCspace::IMUMessage &msg)
 {
     CHECK_NE(msg.linear_acceleration_covariance[0], -1)
         << "Your IMU data claims to not contain linear acceleration measurements "
@@ -82,8 +84,9 @@ std::unique_ptr<carto::sensor::ImuData> SensorBridge::ToImuData(const IMU_PandCs
             sensor_to_tracking->rotation() * ToEigen(msg.angular_velocity)});
 }
 
-void SensorBridge::HandleImuMessage(const std::string &sensor_id,
-                                    const IMU_PandCspace::IMUMessage& msg)
+void
+SensorBridge::HandleImuMessage(const std::string &sensor_id,
+                               const IMU_PandCspace::IMUMessage &msg)
 {
     std::unique_ptr<carto::sensor::ImuData> imu_data = ToImuData(msg);
     if (imu_data != nullptr)
@@ -94,8 +97,9 @@ void SensorBridge::HandleImuMessage(const std::string &sensor_id,
                                    imu_data->angular_velocity});
     }
 }
-void SensorBridge::HandleMultiEchoLaserScanMessage(const std::string &sensor_id,
-                                                    const LASER_PandCspace::LASERMessage& msg)
+void
+SensorBridge::HandleMultiEchoLaserScanMessage(const std::string &sensor_id,
+                                              const LASER_PandCspace::LASERMessage &msg)
 {
     carto::sensor::PointCloudWithIntensities point_cloud;
     carto::common::Time time;
@@ -103,10 +107,11 @@ void SensorBridge::HandleMultiEchoLaserScanMessage(const std::string &sensor_id,
     HandleLaserScan(sensor_id, time, msg.header.frame_id, point_cloud);
 }
 
+const TfBridge &
+SensorBridge::tf_bridge() const { return tf_bridge_; }
 
-const TfBridge &SensorBridge::tf_bridge() const { return tf_bridge_; }
-
-void SensorBridge::HandleLaserScan(
+void
+SensorBridge::HandleLaserScan(
     const std::string &sensor_id, const carto::common::Time time,
     const std::string &frame_id,
     const carto::sensor::PointCloudWithIntensities &points)
@@ -125,6 +130,7 @@ void SensorBridge::HandleLaserScan(
             points.points.size() * (i + 1) / num_subdivisions_per_laser_scan_;
         carto::sensor::TimedPointCloud subdivision(
             points.points.begin() + start_index, points.points.begin() + end_index);
+
         if (start_index == end_index)
         {
             continue;
@@ -135,6 +141,8 @@ void SensorBridge::HandleLaserScan(
         const carto::common::Time subdivision_time =
             time + carto::common::FromSeconds(time_to_subdivision_end);
         auto it = sensor_to_previous_subdivision_time_.find(sensor_id);
+
+//        LOG(INFO) << "subdivision_time is : "<<subdivision_time<<" previous_subdivision_time : "<<it->second;
         if (it != sensor_to_previous_subdivision_time_.end() &&
             it->second >= subdivision_time)
         {
@@ -154,7 +162,8 @@ void SensorBridge::HandleLaserScan(
     }
 }
 
-void SensorBridge::HandleRangefinder(
+void
+SensorBridge::HandleRangefinder(
     const std::string &sensor_id, const carto::common::Time time,
     const std::string &frame_id, const carto::sensor::TimedPointCloud &ranges)
 {
@@ -164,9 +173,9 @@ void SensorBridge::HandleRangefinder(
     {
         trajectory_builder_->AddSensorData(
             sensor_id, carto::sensor::TimedPointCloudData{
-                           time, sensor_to_tracking->translation().cast<float>(),
-                           carto::sensor::TransformTimedPointCloud(
-                               ranges, sensor_to_tracking->cast<float>())});
+                time, sensor_to_tracking->translation().cast<float>(),
+                carto::sensor::TransformTimedPointCloud(
+                    ranges, sensor_to_tracking->cast<float>())});
     }
 }
 

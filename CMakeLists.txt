@@ -11,7 +11,8 @@ find_package(Boost 1.55.0 REQUIRED COMPONENTS system filesystem)
 include_directories(include/
         /usr/include/eigen3/
         ${Boost_INCLUDE_DIRS}
-        ydlidar)
+        ydlidar/
+        matrix/)
 
 AUX_SOURCE_DIRECTORY(third AllPart)
 

@@ -132,10 +132,13 @@ LaserScanToPointCloudWithIntensities(const LASER_PandCspace::LASERMessage &msg)
         angle += msg.angle_increment;
     }
     ::cartographer::common::Time timestamp = FromRos(msg.header.stamp);
+//    LOG(INFO)<<"orignal timestamp is :"<<timestamp;
     if (!point_cloud.points.empty())
     {
         const double duration = point_cloud.points.back()[3];
+//        LOG(INFO)<<"orignal duration is : "<<duration;
         timestamp += cartographer::common::FromSeconds(duration);
+//        LOG(INFO)<<"add duration timestamp is : "<<timestamp;
         for (Eigen::Vector4f &point : point_cloud.points)
         {
             point[3] -= duration;
@@ -233,6 +236,7 @@ ToPointCloudWithIntensities(const sensor_msgs::PointCloud2 &message)
   return std::make_tuple(point_cloud, FromRos(message.header.stamp));
 }
 */
+
 /*
 LandmarkData
 ToLandmarkData(const LandmarkList &landmark_list)

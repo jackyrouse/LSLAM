@@ -13,6 +13,8 @@ using namespace ::boost::asio;
 #include "imudata.h"
 #include "cartographer_ros/node.h"
 
+//#define IMU_DEBUG_OUT
+
 namespace IMU_PandCspace
 {
 
@@ -246,7 +248,11 @@ ProduceIMUItem(IMUItemRepository *ir, IMUMessage item)
     while (((ir->write_position + 1) % kIMUItemRepositorySize)
         == ir->read_position)
     { // item buffer is full, just wait here.
+
+#ifdef IMU_DEBUG_OUT
         std::cout << "IMU_Producer is waiting for an empty slot...\n";
+#endif
+
         (ir->repo_not_full).wait(lock); // 生产者等待"产品库缓冲区不为满"这一条件发生.
     }
 
@@ -273,6 +279,8 @@ ProducerIMUTask() // 生产者任务
         ProduceItem(&gIMUItemRepository, tmp_imu_message); // 循环生产 kItemsToProduce 个产品.
         i++;
     }*/
+
+
     io_service io_s;
     serial_port sp(io_s, imudev.data());
     if (!sp.is_open())
@@ -358,7 +366,9 @@ ProducerIMUTask() // 生产者任务
             {
                 if (havegetdrift)
                 {
+#ifdef IMU_DEBUG_OUT
                     std::cout << "get imu data" << std::endl;
+#endif
                     IMU_DataUnpack(recvdata,
                                    &IMU_GyroX,
                                    &IMU_GyroY,
@@ -380,7 +390,9 @@ ProducerIMUTask() // 生产者任务
                                     (float) IMU_AccelY,
                                     (float) IMU_AccelZ);
                     //imumsg.header.stamp =;
+#ifdef IMU_DEBUG_OUT
                     std::cout<<"imu message sequence : "<<sequence<<std::endl;
+#endif
                     timeval tv;
                     gettimeofday(&tv, 0);
                     imumsg.header.stamp = tv;
@@ -408,6 +420,7 @@ ProducerIMUTask() // 生产者任务
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
 //        usleep(2 * 1000);
     }
+
     return;
 }
 
@@ -419,7 +432,9 @@ ConsumeIMUItem(IMUItemRepository *ir)
     // item buffer is empty, just wait here.
     while (ir->write_position == ir->read_position)
     {
+#ifdef IMU_DEBUG_OUT
         std::cout << "IMU_Consumer is waiting for items...\n";
+#endif
         (ir->repo_not_empty).wait(lock); // 消费者等待"产品库缓冲区不为空"这一条件发生.
     }
 
@@ -447,13 +462,14 @@ ConsumerIMUTask(cartographer_ros::Node* nodeptr) // 消费者任务
 //        nodeptr->HandleImuMessage(0, "imu", std::ref(item));
         nodeptr->HandleImuMessage(0, "imu", item);
 
-/*
-        std::cout << "Consume the " << item.header.seq << "^th item" << std::endl;
-        std::cout << "Angle : [" << item.angular_velocity.x << "," << item.angular_velocity.y << ","
-                  << item.angular_velocity.z << "]" << std::endl;
-        std::cout << "linear : [" << item.linear_acceleration.x << "," << item.linear_acceleration.y << ","
-                  << item.linear_acceleration.z << "]" << std::endl;
-*/
+
+//        std::cout << "Consume the " << item.header.seq << "^th item" << std::endl;
+//        std::cout << "Angle : [" << item.angular_velocity.x << "," << item.angular_velocity.y << ","
+//                  << item.angular_velocity.z << "]" << std::endl;
+//        std::cout << "linear : [" << item.linear_acceleration.x << "," << item.linear_acceleration.y << ","
+//                  << item.linear_acceleration.z << "]" << std::endl;
+
+
 //        if (++cnt == kItemsToProduce)
 //            break; // 如果产品消费个数为 kItemsToProduce, 则退出.
     }

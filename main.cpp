@@ -68,7 +68,7 @@ mapcreator(cartographer_ros::Node *nodeptr)
     int tmptag = 0;
     while (true)
     {
-        milliseconds_sleep(300);
+        milliseconds_sleep(1000);
         nodeptr->GetMap();
         if (nodeptr->submap_slices_.empty() || nodeptr->last_frame_id_.empty())
         {
@@ -142,6 +142,8 @@ Run()
         std::cout<<"display server cannot connected, exit!"<<std::endl;
     }
 */
+
+
     constexpr double kTfBufferCacheTimeInSeconds = 10.;
     NodeOptions node_options;
     TrajectoryOptions trajectory_options;
@@ -189,6 +191,7 @@ Run()
 int
 main(int argc, char **argv)
 {
+
     google::InitGoogleLogging(argv[0]);
     google::ParseCommandLineFlags(&argc, &argv, true);
 
@@ -203,5 +206,6 @@ main(int argc, char **argv)
 
     cartographer_ros::ScopedRosLogSink ros_log_sink;
     cartographer_ros::Run();
+
     return 0;
 }
