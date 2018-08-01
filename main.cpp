@@ -42,8 +42,8 @@ std::string FLAGS_configuration_directory;
 std::string FLAGS_configuration_basename;
 
 TCPClient tcp_client;
-std::string server_ip = "192.168.1.113";
-int server_port = 11999;
+std::string server_ip;// = "192.168.1.113";
+int server_port;// = 11999;
 
 ::cartographer::common::Mutex mutex_;
 
@@ -81,13 +81,19 @@ mapcreator(cartographer_ros::Node *nodeptr)
         tmpstream << "//home//jacky//Downloads//test//" << tmptag << ".png";
         savemapstr = tmpstream.str();
         tmptag++;
+//        cairo_surface_t * tmp_surface;
+//        tmp_surface = painted_slices.surface.get();
+//        cairo_t * cr;
+//        cr = cairo_create(tmp_surface);
+//        cairo_set_source_rgb(cr, 0, 0, 0);
+//        cairo_surface_write_to_png(tmp_surface, savemapstr.data());
         cairo_surface_write_to_png(painted_slices.surface.get(), savemapstr.data());
 
         int iport = 11999;
-        std::string serverip= "127.0.0.1";
+ //       std::string serverip= "192.168.1.131";
         std::cout<<"send file : "<<savemapstr<<std::endl;
 
-        if(1 == send_work(serverip.data(), iport, savemapstr.data()))
+        if(1 == send_work(server_ip.data(), server_port, savemapstr.data()))
         {
             std::cout<<"send success!"<<std::endl;
         }
@@ -197,6 +203,9 @@ main(int argc, char **argv)
 
     cartographer_ros::FLAGS_configuration_directory = argv[1];
     cartographer_ros::FLAGS_configuration_basename = argv[2];
+    cartographer_ros::server_ip = argv[3];
+    cartographer_ros::server_port = atoi(argv[4]);
+
     CHECK(!cartographer_ros::FLAGS_configuration_directory.empty())
     << "-configuration_directory is missing.";
     CHECK(!cartographer_ros::FLAGS_configuration_basename.empty())
