@@ -135,7 +135,7 @@ createlasermsgfun(LASERMessage *lmsg, LaserScan tmpscan)
 }
 
 void
-ProducerLASERTask() // 生产者任务
+ProducerLASERTask(cartographer_ros::Node* nodeptr) // 生产者任务
 {
 /*
     for (int i = 1; i <= kLASERItemRepositorySize; ++i)
@@ -210,6 +210,8 @@ ProducerLASERTask() // 生产者任务
     laser.disconnecting();
 */
 
+    nodeptr->laser_produce_threadHasStopped_.store(false, std::memory_order_release);
+
     const int baud = baud;
     //bool intensities = ((intensities==0) ? false : true ) ;
     bool intensities = false;
@@ -243,8 +245,17 @@ ProducerLASERTask() // 生产者任务
 
     int sequence = 0;
 
-    while (!running)
+//    while (!running)
+
+    while(nodeptr->laser_produce_running_.load(std::memory_order_relaxed) == true)
     {
+        if(running)
+        {
+            nodeptr->laser_produce_threadHasStopped_.store(true, std::memory_order_release);
+            std::cout<<"laser produce thread end"<<std::endl;
+            return;
+        }
+
         bool hardError;
         LaserScan scan;//原始激光数据
         LaserScan syncscan;//同步后激光数据
@@ -303,14 +314,18 @@ ProducerLASERTask() // 生产者任务
     laser.turnOff();
     laser.disconnecting();
 
+    nodeptr->laser_produce_threadHasStopped_.store(true, std::memory_order_release);
+    std::cout<<"laser produce thread end"<<std::endl;
     return;
 }
 
 void
 ConsumerLASERTask(cartographer_ros::Node *nodeptr) // 消费者任务
 {
+    nodeptr->laser_consumer_threadHasStopped_.store(false, std::memory_order_release);
     static int cnt = 0;
-    while (1)
+//    while (1)
+    while(nodeptr->laser_consumer_running_.load(std::memory_order_relaxed) == true)
     {
 //        usleep(10 * 1000);;
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -319,6 +334,8 @@ ConsumerLASERTask(cartographer_ros::Node *nodeptr) // 消费者任务
         nodeptr->HandleMultiEchoLaserScanMessage(0, "echoes", Laseritem);
 //        std::cout << "Consume the " << Laseritem.header.seq << "^th item" << std::endl;
     }
+    nodeptr->laser_consumer_threadHasStopped_.store(true, std::memory_order_release);
+    std::cout<<"laser consume thread end"<<std::endl;
 }
 
 void

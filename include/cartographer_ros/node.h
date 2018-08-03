@@ -23,6 +23,8 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <atomic>
+#include <thread>
 
 #include "cartographer/common/fixed_ratio_sampler.h"
 //#include "cartographer/common/mutex.h"
@@ -135,7 +137,31 @@ public:
     timeval last_timestamp_;
     std::map<::cartographer::mapping::SubmapId, ::cartographer::io::SubmapSlice> submap_slices_ GUARDED_BY(mutex_);
 
+    std::thread *imu_produce_Thread_;
+    std::thread *imu_consumer_Thread_;
+    std::thread *laser_produce_Thread_;
+    std::thread *laser_consumer_Thread_;
+    std::thread *map_creater_Thread_;
+
+    std::atomic<bool> imu_produce_running_;
+    std::atomic<bool> imu_produce_threadHasStopped_;
+
+    std::atomic<bool> imu_consumer_running_;
+    std::atomic<bool> imu_consumer_threadHasStopped_;
+
+    std::atomic<bool> laser_produce_running_;
+    std::atomic<bool> laser_produce_threadHasStopped_;
+
+    std::atomic<bool> laser_consumer_running_;
+    std::atomic<bool> laser_consumer_threadHasStopped_;
+
+    std::atomic<bool> map_creater_running;
+    std::atomic<bool> map_creater_threadHasStopped_;
+
+    std::condition_variable cvWaitThreadExit;
 private:
+
+
 /*
     bool
     HandleSubmapQuery(

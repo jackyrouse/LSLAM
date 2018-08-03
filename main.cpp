@@ -46,6 +46,7 @@ std::string server_ip;// = "192.168.1.113";
 int server_port;// = 11999;
 
 ::cartographer::common::Mutex mutex_;
+::cartographer_ros::Node* global_nodeptr;
 
 void
 milliseconds_sleep(unsigned long mSec)
@@ -64,9 +65,11 @@ milliseconds_sleep(unsigned long mSec)
 void
 mapcreator(cartographer_ros::Node *nodeptr)
 {
+    global_nodeptr->map_creater_threadHasStopped_.store(false, std::memory_order_release);
     const double resolution_ = 0.05;
     int tmptag = 0;
-    while (true)
+//    while (true)
+    while(global_nodeptr->map_creater_running.load(std::memory_order_relaxed) == true)
     {
         milliseconds_sleep(1000);
         nodeptr->GetMap();
@@ -81,12 +84,7 @@ mapcreator(cartographer_ros::Node *nodeptr)
         tmpstream << "//home//jacky//Downloads//test//" << tmptag << ".png";
         savemapstr = tmpstream.str();
         tmptag++;
-//        cairo_surface_t * tmp_surface;
-//        tmp_surface = painted_slices.surface.get();
-//        cairo_t * cr;
-//        cr = cairo_create(tmp_surface);
-//        cairo_set_source_rgb(cr, 0, 0, 0);
-//        cairo_surface_write_to_png(tmp_surface, savemapstr.data());
+
         cairo_surface_write_to_png(painted_slices.surface.get(), savemapstr.data());
 
         int iport = 11999;
@@ -137,7 +135,90 @@ mapcreator(cartographer_ros::Node *nodeptr)
         //remove(savemapstr.data());
 
     }
+    global_nodeptr->map_creater_threadHasStopped_.store(true, std::memory_order_release);
+    std::cout<<"map creator thread end"<<std::endl;
     return;
+}
+
+void
+Stop()
+{
+    std::cout << "thread beding to stop " << std::endl;
+
+    //end imu produce;
+    global_nodeptr->imu_produce_running_.store(false, std::memory_order_release);//= false;
+    std::cout << "imu produce wait thread exit " << std::endl;
+    while (global_nodeptr->imu_produce_threadHasStopped_.load(std::memory_order_relaxed) == false)
+    {
+    };
+    std::cout << "imu produce thread has exit " << std::endl;
+    if (nullptr == global_nodeptr->imu_produce_Thread_)
+    {
+        // 必须调用 join, 等待线程真正执行完毕再析构,
+        // 否则析构时thread类调用 terminate 异常
+        global_nodeptr->imu_produce_Thread_->join();
+        delete global_nodeptr->imu_produce_Thread_;
+        global_nodeptr->imu_produce_Thread_ = nullptr;
+    }
+
+    //end imu consumer
+    global_nodeptr->imu_consumer_running_.store(false, std::memory_order_release);//= false;
+    std::cout << "imu produce wait thread exit " << std::endl;
+    while (global_nodeptr->imu_consumer_threadHasStopped_.load(std::memory_order_relaxed) == false)
+    {
+    };
+    std::cout << "imu produce thread has exit " << std::endl;
+    if (nullptr == global_nodeptr->imu_consumer_Thread_)
+    {
+        // 必须调用 join, 等待线程真正执行完毕再析构,
+        // 否则析构时thread类调用 terminate 异常
+        global_nodeptr->imu_consumer_Thread_->join();
+        delete global_nodeptr->imu_consumer_Thread_;
+        global_nodeptr->imu_consumer_Thread_ = nullptr;
+    }
+
+    //end laser produce
+    global_nodeptr->laser_produce_running_.store(false, std::memory_order_release);//= false;
+    std::cout << "imu produce wait thread exit " << std::endl;
+    while (global_nodeptr->laser_produce_threadHasStopped_.load(std::memory_order_relaxed) == false)
+    {
+    };
+    std::cout << "imu produce thread has exit " << std::endl;
+    if (nullptr == global_nodeptr->laser_produce_Thread_)
+    {
+        // 必须调用 join, 等待线程真正执行完毕再析构,
+        // 否则析构时thread类调用 terminate 异常
+        global_nodeptr->laser_produce_Thread_->join();
+        delete global_nodeptr->laser_produce_Thread_;
+        global_nodeptr->laser_produce_Thread_ = nullptr;
+    }
+
+    //end laser consume
+    global_nodeptr->laser_consumer_running_.store(false, std::memory_order_release);//= false;
+    std::cout << "imu produce wait thread exit " << std::endl;
+    while (global_nodeptr->laser_consumer_threadHasStopped_.load(std::memory_order_relaxed) == false)
+    {
+    };
+    std::cout << "imu produce thread has exit " << std::endl;
+    if (nullptr == global_nodeptr->laser_consumer_Thread_)
+    {
+        // 必须调用 join, 等待线程真正执行完毕再析构,
+        // 否则析构时thread类调用 terminate 异常
+        global_nodeptr->laser_consumer_Thread_->join();
+        delete global_nodeptr->laser_consumer_Thread_;
+        global_nodeptr->laser_consumer_Thread_ = nullptr;
+    }
+
+    return;
+}
+
+static bool mainRunning = true;
+void
+quitFunc(int signal)
+{
+    cout << "quit main" << endl;
+    mainRunning = false;
+    Stop();
 }
 
 void
@@ -164,26 +245,56 @@ Run()
 
     Node node(node_options, std::move(map_builder));//, &tf_buffer);
 
-
+    global_nodeptr = &node;
     node.StartTrajectoryWithDefaultTopics(trajectory_options);
 
     IMU_PandCspace::InitIMUItemRepository(&IMU_PandCspace::gIMUItemRepository);
     LASER_PandCspace::InitLASERItemRepository(&LASER_PandCspace::gLASERItemRepository);
-    std::thread imu_producer(IMU_PandCspace::ProducerIMUTask); // 创建imu生产者线程.
+    std::thread imu_producer(IMU_PandCspace::ProducerIMUTask, &node); // 创建imu生产者线程.
     std::thread imu_consumer(IMU_PandCspace::ConsumerIMUTask, &node); // 创建imu消费之线程.
-    std::thread laser_producer(LASER_PandCspace::ProducerLASERTask);// 创建laser生产者线程.
+    std::thread laser_producer(LASER_PandCspace::ProducerLASERTask, &node);// 创建laser生产者线程.
     std::thread laser_consumer(LASER_PandCspace::ConsumerLASERTask, &node);// 创建laser生产者线程.
     std::thread map_creator(mapcreator, &node);// 创建地图生成线程.
-    imu_producer.join();
-    imu_consumer.join();
-    laser_producer.join();
-    laser_consumer.join();
-    map_creator.join();
+    global_nodeptr->imu_produce_Thread_ = &imu_producer;
+    global_nodeptr->imu_consumer_Thread_ = &imu_consumer;
+    global_nodeptr->laser_produce_Thread_ = &laser_producer;
+    global_nodeptr->laser_consumer_Thread_ = &laser_consumer;
+    global_nodeptr->map_creater_Thread_ = &map_creator;
 
-//    ::ros::spin();
+//    imu_producer.join();
+//    imu_consumer.join();
+//    laser_producer.join();
+//    laser_consumer.join();
+//    map_creator.join();
+    std::chrono::seconds dura(2);
+    std::signal(SIGINT, quitFunc);
+    std::signal(SIGTERM, quitFunc);
+    std::signal(SIGABRT, quitFunc);
+    while (mainRunning)
+    {
+        std::this_thread::sleep_for(dura);
+        std::cout << "main sleep: " << std::endl;
+    }
 
     node.FinishAllTrajectories();
     node.RunFinalOptimization();
+
+    //是否需要等待RunFinalOptimization的结束？
+    std::this_thread::sleep_for(dura);
+    global_nodeptr->map_creater_running.store(false, std::memory_order_release);//= false;
+    std::cout << "map creater wait thread exit " << std::endl;
+    while (global_nodeptr->map_creater_threadHasStopped_.load(std::memory_order_relaxed) == false)
+    {
+    };
+    std::cout << "map creater thread has exit " << std::endl;
+    if (nullptr == global_nodeptr->map_creater_Thread_)
+    {
+        // 必须调用 join, 等待线程真正执行完毕再析构,
+        // 否则析构时thread类调用 terminate 异常
+        global_nodeptr->map_creater_Thread_->join();
+        delete global_nodeptr->map_creater_Thread_;
+        global_nodeptr->map_creater_Thread_ = nullptr;
+    }
 
     if (!FLAGS_save_state_filename.empty())
     {
@@ -192,6 +303,7 @@ Run()
 }
 
 }
+
 }
 
 int
@@ -215,6 +327,7 @@ main(int argc, char **argv)
 
     cartographer_ros::ScopedRosLogSink ros_log_sink;
     cartographer_ros::Run();
+
 
     return 0;
 }

@@ -267,7 +267,7 @@ ProduceIMUItem(IMUItemRepository *ir, IMUMessage item)
 }
 
 void
-ProducerIMUTask() // 生产者任务
+ProducerIMUTask(cartographer_ros::Node* nodeptr) // 生产者任务
 {
     //for (int i = 1; i <= kItemsToProduce; ++i)
 /*    int64_t i = 0;
@@ -281,11 +281,14 @@ ProducerIMUTask() // 生产者任务
     }*/
 
 
+    nodeptr->imu_produce_threadHasStopped_.store(false, std::memory_order_release);
+
     io_service io_s;
     serial_port sp(io_s, imudev.data());
     if (!sp.is_open())
     {
         std::cout << "can not open imu device" << std::endl;
+        nodeptr->imu_produce_threadHasStopped_.store(true, std::memory_order_release);// = true;
         return;
     }
 
@@ -313,7 +316,8 @@ ProducerIMUTask() // 生产者任务
     char lastRecved = 0x00;
     boost::system::error_code err;
     int sequence = 0;
-    while (true)
+//    while (true)
+    while(nodeptr->imu_produce_running_.load(std::memory_order_relaxed) == true)
     {
         if (!havegetdrift)
             headchar = 0xfc;
@@ -420,7 +424,8 @@ ProducerIMUTask() // 生产者任务
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
 //        usleep(2 * 1000);
     }
-
+    nodeptr->imu_produce_threadHasStopped_.store(true, std::memory_order_release);// = true;
+    std::cout << "imu produce thread end " << std::endl;
     return;
 }
 
@@ -453,8 +458,10 @@ ConsumeIMUItem(IMUItemRepository *ir)
 void
 ConsumerIMUTask(cartographer_ros::Node* nodeptr) // 消费者任务
 {
+    nodeptr->imu_consumer_threadHasStopped_.store(false, std::memory_order_release);
     static int cnt = 0;
-    while (1)
+//    while (1)
+    while(nodeptr->imu_consumer_running_.load(std::memory_order_relaxed) == true)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
 //        usleep(2 * 1000);
@@ -473,6 +480,8 @@ ConsumerIMUTask(cartographer_ros::Node* nodeptr) // 消费者任务
 //        if (++cnt == kItemsToProduce)
 //            break; // 如果产品消费个数为 kItemsToProduce, 则退出.
     }
+    nodeptr->imu_consumer_threadHasStopped_.store(true, std::memory_order_release);
+    std::cout<<"imu consuer thread end"<<std::endl;
 }
 
 void

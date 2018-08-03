@@ -85,6 +85,20 @@ Node::Node(
         ::ros::WallDuration(node_options_.submap_publish_period_sec),
         &Node::PublishSubmapList, this));
 */
+    imu_produce_running_.store(false, std::memory_order_relaxed);// = false;
+    imu_produce_threadHasStopped_.store(true, std::memory_order_relaxed);// = true;
+
+    imu_consumer_running_.store(false, std::memory_order_relaxed);// = false;
+    imu_consumer_threadHasStopped_.store(true, std::memory_order_relaxed);// = true;
+
+    laser_produce_running_.store(false, std::memory_order_relaxed);// = false;
+    laser_produce_threadHasStopped_.store(true, std::memory_order_relaxed);// = true;
+
+    laser_consumer_running_.store(false, std::memory_order_relaxed);// = false;
+    laser_consumer_threadHasStopped_.store(true, std::memory_order_relaxed);// = true;
+
+    map_creater_running.store(false, std::memory_order_relaxed);// = false;
+    map_creater_threadHasStopped_.store(true, std::memory_order_relaxed);// = true;
 }
 
 Node::~Node() { FinishAllTrajectories(); }
