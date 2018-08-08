@@ -155,7 +155,7 @@ public:
     std::atomic<bool> laser_consumer_running_;
     std::atomic<bool> laser_consumer_threadHasStopped_;
 
-    std::atomic<bool> map_creater_running;
+    std::atomic<bool> map_creater_running_;
     std::atomic<bool> map_creater_threadHasStopped_;
 
     std::condition_variable cvWaitThreadExit;

@@ -37,6 +37,7 @@ const std::string port = "/dev/ydlidar";
 const int baud = 115200;
 const int intensities = 0;
 
+/*
 static void
 Stop(int signo)
 {
@@ -45,6 +46,7 @@ Stop(int signo)
     running = true;
 
 }
+*/
 
 void
 ProduceLASERItem(LASERItemRepository *ir, LASERMessage item)
@@ -210,6 +212,11 @@ ProducerLASERTask(cartographer_ros::Node* nodeptr) // 生产者任务
     laser.disconnecting();
 */
 
+    if(nodeptr->laser_produce_running_.load(std::memory_order_acquire))
+    {
+        return;
+    }
+    nodeptr->laser_produce_running_.store(true, std::memory_order_release);
     nodeptr->laser_produce_threadHasStopped_.store(false, std::memory_order_release);
 
     const int baud = baud;
@@ -217,8 +224,8 @@ ProducerLASERTask(cartographer_ros::Node* nodeptr) // 生产者任务
     bool intensities = false;
 //laser code
 
-    signal(SIGINT, Stop);
-    signal(SIGTERM, Stop);
+//    signal(SIGINT, Stop);
+//    signal(SIGTERM, Stop);
     laser.setSerialPort(port);
     laser.setSerialBaudrate(baud);
     laser.setIntensities(intensities);
@@ -249,13 +256,14 @@ ProducerLASERTask(cartographer_ros::Node* nodeptr) // 生产者任务
 
     while(nodeptr->laser_produce_running_.load(std::memory_order_relaxed) == true)
     {
+/*
         if(running)
         {
             nodeptr->laser_produce_threadHasStopped_.store(true, std::memory_order_release);
             std::cout<<"laser produce thread end"<<std::endl;
             return;
         }
-
+*/
         bool hardError;
         LaserScan scan;//原始激光数据
         LaserScan syncscan;//同步后激光数据
@@ -322,6 +330,11 @@ ProducerLASERTask(cartographer_ros::Node* nodeptr) // 生产者任务
 void
 ConsumerLASERTask(cartographer_ros::Node *nodeptr) // 消费者任务
 {
+    if(nodeptr->laser_consumer_running_.load(std::memory_order_acquire))
+    {
+        return;
+    }
+    nodeptr->laser_consumer_running_.store(true, std::memory_order_release);
     nodeptr->laser_consumer_threadHasStopped_.store(false, std::memory_order_release);
     static int cnt = 0;
 //    while (1)

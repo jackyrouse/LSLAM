@@ -280,7 +280,11 @@ ProducerIMUTask(cartographer_ros::Node* nodeptr) // 生产者任务
         i++;
     }*/
 
-
+    if(nodeptr->imu_produce_running_.load(std::memory_order_acquire))
+    {
+        return;
+    }
+    nodeptr->imu_produce_running_.store(true, std::memory_order_release);
     nodeptr->imu_produce_threadHasStopped_.store(false, std::memory_order_release);
 
     io_service io_s;
@@ -458,7 +462,13 @@ ConsumeIMUItem(IMUItemRepository *ir)
 void
 ConsumerIMUTask(cartographer_ros::Node* nodeptr) // 消费者任务
 {
+    if(nodeptr->imu_consumer_running_.load(std::memory_order_acquire))
+    {
+        return;
+    }
+    nodeptr->imu_consumer_running_.store(true, std::memory_order_release);
     nodeptr->imu_consumer_threadHasStopped_.store(false, std::memory_order_release);
+
     static int cnt = 0;
 //    while (1)
     while(nodeptr->imu_consumer_running_.load(std::memory_order_relaxed) == true)
@@ -481,7 +491,7 @@ ConsumerIMUTask(cartographer_ros::Node* nodeptr) // 消费者任务
 //            break; // 如果产品消费个数为 kItemsToProduce, 则退出.
     }
     nodeptr->imu_consumer_threadHasStopped_.store(true, std::memory_order_release);
-    std::cout<<"imu consuer thread end"<<std::endl;
+    std::cout<<"imu consumer thread end"<<std::endl;
 }
 
 void

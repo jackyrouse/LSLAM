@@ -97,7 +97,7 @@ Node::Node(
     laser_consumer_running_.store(false, std::memory_order_relaxed);// = false;
     laser_consumer_threadHasStopped_.store(true, std::memory_order_relaxed);// = true;
 
-    map_creater_running.store(false, std::memory_order_relaxed);// = false;
+    map_creater_running_.store(false, std::memory_order_relaxed);// = false;
     map_creater_threadHasStopped_.store(true, std::memory_order_relaxed);// = true;
 }
 

@@ -65,11 +65,16 @@ milliseconds_sleep(unsigned long mSec)
 void
 mapcreator(cartographer_ros::Node *nodeptr)
 {
+    if(global_nodeptr->map_creater_running_.load(std::memory_order_acquire))
+    {
+        return;
+    }
+    global_nodeptr->map_creater_running_.store(true, std::memory_order_release);
     global_nodeptr->map_creater_threadHasStopped_.store(false, std::memory_order_release);
     const double resolution_ = 0.05;
     int tmptag = 0;
 //    while (true)
-    while(global_nodeptr->map_creater_running.load(std::memory_order_relaxed) == true)
+    while(global_nodeptr->map_creater_running_.load(std::memory_order_relaxed) == true)
     {
         milliseconds_sleep(1000);
         nodeptr->GetMap();
@@ -281,7 +286,7 @@ Run()
 
     //是否需要等待RunFinalOptimization的结束？
     std::this_thread::sleep_for(dura);
-    global_nodeptr->map_creater_running.store(false, std::memory_order_release);//= false;
+    global_nodeptr->map_creater_running_.store(false, std::memory_order_release);//= false;
     std::cout << "map creater wait thread exit " << std::endl;
     while (global_nodeptr->map_creater_threadHasStopped_.load(std::memory_order_relaxed) == false)
     {
@@ -327,7 +332,6 @@ main(int argc, char **argv)
 
     cartographer_ros::ScopedRosLogSink ros_log_sink;
     cartographer_ros::Run();
-
 
     return 0;
 }
