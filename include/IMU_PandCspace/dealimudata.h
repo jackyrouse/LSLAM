@@ -12,8 +12,9 @@
 using namespace ::boost::asio;
 #include "imudata.h"
 #include "cartographer_ros/node.h"
-
+//#include <fstream>
 //#define IMU_DEBUG_OUT
+#define IMU_DATA_OUT_FILE
 
 namespace IMU_PandCspace
 {
@@ -280,6 +281,10 @@ ProducerIMUTask(cartographer_ros::Node* nodeptr) // 生产者任务
         i++;
     }*/
 
+#ifdef IMU_DATA_OUT_FILE
+    std::ofstream imudataout("/home/pi/imu.data");
+#endif
+
     if(nodeptr->imu_produce_running_.load(std::memory_order_acquire))
     {
         return;
@@ -389,6 +394,9 @@ ProducerIMUTask(cartographer_ros::Node* nodeptr) // 生产者任务
                     IMU_fGyroY = (float) IMU_GyroY - DriftGyro_Y;
                     IMU_fGyroZ = (float) IMU_GyroZ - DriftGyro_Z;
 
+#ifdef IMU_DATA_OUT_FILE
+                    imudataout<<IMU_fGyroX<<","<<IMU_fGyroY<<","<<IMU_fGyroZ<<","<<IMU_AccelX<<","<<IMU_AccelY<<","<<IMU_AccelZ<<std::endl;
+#endif
                     IMUMessage imumsg;
                     createimumsgfun(&imumsg,
                                     IMU_fGyroX,

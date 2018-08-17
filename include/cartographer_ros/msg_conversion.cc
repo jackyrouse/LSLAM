@@ -337,6 +337,14 @@ MySubmapdata::Pose ToGeometryMsgPose(const Rigid3d &rigid3d)
     return pose;
 }
 
+MyMarkerArray::Point MyToGeometryMsgPoint(const Eigen::Vector3d &vector3d)
+{
+    MyMarkerArray::Point point;
+    point.x = vector3d.x();
+    point.y = vector3d.y();
+    point.z = vector3d.z();
+    return point;
+}
 
 
 Eigen::Vector3d

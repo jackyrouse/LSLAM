@@ -41,6 +41,7 @@
 #include "IMU_PandCspace/imudata.h"
 #include "LASER_PandCspace/laserdata.h"
 #include "MySubmapdata/Submapdata.h"
+#include "MyMarkerArray/MarkerArray.h"
 
 namespace cartographer_ros
 {
@@ -56,6 +57,8 @@ geometry_msgs::Transform ToGeometryMsgTransform(
 MySubmapdata::Point ToGeometryMsgPoint(const Eigen::Vector3d &vector3d);
 
 MySubmapdata::Pose ToGeometryMsgPose(const ::cartographer::transform::Rigid3d &rigid3d);
+
+MyMarkerArray::Point MyToGeometryMsgPoint(const Eigen::Vector3d &vector3d);
 
 
 

@@ -14,6 +14,9 @@
 #include "third/TCPClient.h"
 #include "third/pub.h"
 
+
+#define MAP_POSITION_OUT_FILE
+
 DEFINE_string(configuration_directory, "",
               "First directory in which configuration files are searched, "
               "second is always the Cartographer installation to allow "
@@ -61,6 +64,28 @@ milliseconds_sleep(unsigned long mSec)
     }
     while (err < 0 && errno == EINTR);
 }
+#ifdef MAP_POSITION_OUT_FILE
+std::ofstream mappositionout("/home/pi/mapposition.data");
+#endif
+
+#ifdef MAP_POSITION_OUT_FILE
+void PointOutput(MyMarkerArray::Point points_out)
+{
+    mappositionout<<"      -"<<std::endl;
+    mappositionout<<"       x: "<<points_out.x<<std::endl;
+    mappositionout<<"       y: "<<points_out.y<<std::endl;
+    mappositionout<<"       z: "<<points_out.z<<std::endl;
+}
+
+void MarkerOutput(MyMarkerArray::Marker marker)
+{
+    mappositionout<<"   header:"<<std::endl<<"      stamp:"<<std::endl<<"           secs: "<<marker.header.stamp.tv_sec<<std::endl
+                  <<"           nsecs: "<<marker.header.stamp.tv_usec<<std::endl<<"     frame_id: "<<marker.header.frame_id<<std::endl;
+    mappositionout<<"   ns: "<<marker.ns<<std::endl;
+    mappositionout<<"   id :"<<marker.id<<std::endl<<"   points:"<<std::endl;
+    for_each(marker.points.begin(), marker.points.end(), PointOutput);
+}
+#endif
 
 void
 mapcreator(cartographer_ros::Node *nodeptr)
@@ -74,10 +99,15 @@ mapcreator(cartographer_ros::Node *nodeptr)
     const double resolution_ = 0.05;
     int tmptag = 0;
 //    while (true)
+
+
     while(global_nodeptr->map_creater_running_.load(std::memory_order_relaxed) == true)
     {
         milliseconds_sleep(1000);
+
         nodeptr->GetMap();
+        MyMarkerArray::MarkerArray markerarray = nodeptr->GetNodeList();
+
         if (nodeptr->submap_slices_.empty() || nodeptr->last_frame_id_.empty())
         {
             continue;
@@ -86,11 +116,20 @@ mapcreator(cartographer_ros::Node *nodeptr)
         auto painted_slices = PaintSubmapSlices(nodeptr->submap_slices_, resolution_);
         std::string savemapstr;
         std::stringstream tmpstream;
-        tmpstream << "//home//jacky//Downloads//test//" << tmptag << ".png";
+        tmpstream << "//home//pi//tmpmap//" << tmptag << ".png";
         savemapstr = tmpstream.str();
         tmptag++;
 
         cairo_surface_write_to_png(painted_slices.surface.get(), savemapstr.data());
+
+        std::cout<<"top:"<<painted_slices.origin[0]<<" left:"<<painted_slices.origin[1]<<std::endl;
+
+#ifdef MAP_POSITION_OUT_FILE
+        mappositionout<<savemapstr<<std::endl
+                      <<"position: "<<painted_slices.origin[0]<<"  "<<painted_slices.origin[1]<<std::endl;
+        mappositionout<<"markers:"<<std::endl;
+        for_each(markerarray.markers.begin(), markerarray.markers.end(), MarkerOutput);
+#endif
 
         int iport = 11999;
  //       std::string serverip= "192.168.1.131";

@@ -133,9 +133,13 @@ public:
     // Loads a serialized SLAM state from a .pbstream file.
     void
     GetMap();
+
     std::string last_frame_id_;
     timeval last_timestamp_;
     std::map<::cartographer::mapping::SubmapId, ::cartographer::io::SubmapSlice> submap_slices_ GUARDED_BY(mutex_);
+
+    MyMarkerArray::MarkerArray
+    GetNodeList();
 
     std::thread *imu_produce_Thread_;
     std::thread *imu_consumer_Thread_;

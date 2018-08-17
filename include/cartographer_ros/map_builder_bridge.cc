@@ -80,6 +80,35 @@ GetLandmarkIndex(
     }
     return it->second;
 }
+
+MyMarkerArray::Marker CreateTrajectoryMarker(const int trajectory_id,
+                                                  const std::string &frame_id)
+{
+    MyMarkerArray::Marker marker;
+    marker.ns = "Trajectory " + std::to_string(trajectory_id);
+    marker.id = 0;
+    marker.type = 4;//visualization_msgs::Marker::LINE_STRIP;
+
+    timeval tv;
+    gettimeofday(&tv, 0);
+    marker.header.stamp = tv;
+    marker.header.frame_id = frame_id;
+//    marker.color = ToMessage(cartographer::io::GetColor(trajectory_id));
+//    marker.scale.x = kTrajectoryLineStripMarkerScale;
+    marker.pose.orientation.w = 1.;
+    marker.pose.position.z = 0.05;
+    return marker;
+}
+
+void
+PushAndResetLineMarker(MyMarkerArray::Marker *marker,
+                       std::vector<MyMarkerArray::Marker> *markers)
+{
+    markers->push_back(*marker);
+    ++marker->id;
+    marker->points.clear();
+}
+
 /*
 visualization_msgs::Marker
 CreateLandmarkMarker(int landmark_index,
@@ -340,6 +369,129 @@ MapBuilderBridge::GetTrajectoryStates()
     }
     return trajectory_states;
 }
+
+
+
+MyMarkerArray::MarkerArray
+MapBuilderBridge::GetTrajectoryNodeList()
+{
+    MyMarkerArray::MarkerArray trajectory_node_list;
+    const auto node_poses = map_builder_->pose_graph()->GetTrajectoryNodePoses();
+    // Find the last node indices for each trajectory that have either
+    // inter-submap or inter-trajectory constraints.
+    std::map<int, int>
+        trajectory_to_last_inter_submap_constrained_node;// node_index
+    std::map<int, int >
+        trajectory_to_last_inter_trajectory_constrained_node;// node_index
+    for (const int trajectory_id : node_poses.trajectory_ids())
+    {
+        trajectory_to_last_inter_submap_constrained_node[trajectory_id] = 0;
+        trajectory_to_last_inter_trajectory_constrained_node[trajectory_id] = 0;
+    }
+    const auto constraints = map_builder_->pose_graph()->constraints();
+    for (const auto &constraint : constraints)
+    {
+        if (constraint.tag ==
+            cartographer::mapping::PoseGraph::Constraint::INTER_SUBMAP)
+        {
+            if (constraint.node_id.trajectory_id ==
+                constraint.submap_id.trajectory_id)
+            {
+                trajectory_to_last_inter_submap_constrained_node[constraint.node_id
+                    .trajectory_id] =
+                    std::max(trajectory_to_last_inter_submap_constrained_node.at(
+                        constraint.node_id.trajectory_id),
+                             constraint.node_id.node_index);
+            }
+            else
+            {
+                trajectory_to_last_inter_trajectory_constrained_node
+                [constraint.node_id.trajectory_id] =
+                    std::max(trajectory_to_last_inter_submap_constrained_node.at(
+                        constraint.node_id.trajectory_id),
+                             constraint.node_id.node_index);
+            }
+        }
+    }
+
+    for (const int trajectory_id : node_poses.trajectory_ids())
+    {
+        MyMarkerArray::Marker marker =
+            CreateTrajectoryMarker(trajectory_id, node_options_.map_frame);
+        int last_inter_submap_constrained_node = std::max(
+            node_poses.trajectory(trajectory_id).begin()->id.node_index,
+            trajectory_to_last_inter_submap_constrained_node.at(trajectory_id));
+        int last_inter_trajectory_constrained_node = std::max(
+            node_poses.trajectory(trajectory_id).begin()->id.node_index,
+            trajectory_to_last_inter_trajectory_constrained_node.at(trajectory_id));
+        last_inter_submap_constrained_node =
+            std::max(last_inter_submap_constrained_node,
+                     last_inter_trajectory_constrained_node);
+
+        if (map_builder_->pose_graph()->IsTrajectoryFrozen(trajectory_id))
+        {
+            last_inter_submap_constrained_node =
+                (--node_poses.trajectory(trajectory_id).end())->id.node_index;
+            last_inter_trajectory_constrained_node =
+                last_inter_submap_constrained_node;
+        }
+
+//        marker.color.a = 1.0;
+        for (const auto &node_id_data : node_poses.trajectory(trajectory_id))
+        {
+            if (!node_id_data.data.constant_pose_data.has_value())
+            {
+                PushAndResetLineMarker(&marker, &trajectory_node_list.markers);
+                continue;
+            }
+            const MyMarkerArray::Point node_point =
+                MyToGeometryMsgPoint(node_id_data.data.global_pose.translation());
+            marker.points.push_back(node_point);
+
+            if (node_id_data.id.node_index ==
+                last_inter_trajectory_constrained_node)
+            {
+                PushAndResetLineMarker(&marker, &trajectory_node_list.markers);
+                marker.points.push_back(node_point);
+            //    marker.color.a = 0.5;
+            }
+            if (node_id_data.id.node_index == last_inter_submap_constrained_node)
+            {
+                PushAndResetLineMarker(&marker, &trajectory_node_list.markers);
+                marker.points.push_back(node_point);
+            //    marker.color.a = 0.25;
+            }
+            // Work around the 16384 point limit in RViz by splitting the
+            // trajectory into multiple markers.
+            if (marker.points.size() == 16384)
+            {
+                PushAndResetLineMarker(&marker, &trajectory_node_list.markers);
+                // Push back the last point, so the two markers appear connected.
+                marker.points.push_back(node_point);
+            }
+        }
+        PushAndResetLineMarker(&marker, &trajectory_node_list.markers);
+
+        size_t current_last_marker_id = static_cast<size_t>(marker.id - 1);
+        if (trajectory_to_highest_marker_id_.count(trajectory_id) == 0)
+        {
+            trajectory_to_highest_marker_id_[trajectory_id] = current_last_marker_id;
+        }
+        else
+        {
+            marker.action = 2;//visualization_msgs::Marker::DELETE;
+            while (static_cast<size_t>(marker.id) <=
+                trajectory_to_highest_marker_id_[trajectory_id])
+            {
+                trajectory_node_list.markers.push_back(marker);
+                ++marker.id;
+            }
+            trajectory_to_highest_marker_id_[trajectory_id] = current_last_marker_id;
+        }
+    }
+    return trajectory_node_list;
+}
+
 
 /*
 visualization_msgs::MarkerArray

@@ -27,7 +27,7 @@ add_executable(LSLAM main.cpp
         include/cartographer_ros/map_builder_bridge.cc
         include/cartographer_ros/sensor_bridge.cc
         include/cartographer_ros/node.cc
-        ${AllPart})
+        ${AllPart} include/MyMarkerArray/MarkerArray.h)
 
 
 target_link_libraries(${PROJECT_NAME} PUBLIC cartographer ${testlaser_LIBRARIES} ${Boost_LIBRARIES} pthread)

@@ -414,9 +414,16 @@ Node::GetMap()
         submap_slices_.erase(id);
     }
 
+//    map_builder_bridge_->Get
     last_frame_id_ = msg.header.frame_id;
     last_timestamp_ = msg.header.stamp;
 };
+
+MyMarkerArray::MarkerArray
+Node::GetNodeList()
+{
+    return map_builder_bridge_.GetTrajectoryNodeList();
+}
 
 int
 Node::AddOfflineTrajectory(

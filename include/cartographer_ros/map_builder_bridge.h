@@ -109,6 +109,9 @@ public:
     std::unordered_map<int, TrajectoryState>
     GetTrajectoryStates()
     EXCLUDES(mutex_);
+
+    MyMarkerArray::MarkerArray
+    GetTrajectoryNodeList();
 /*
     visualization_msgs::MarkerArray
     GetTrajectoryNodeList();
