@@ -394,9 +394,7 @@ ProducerIMUTask(cartographer_ros::Node* nodeptr) // 生产者任务
                     IMU_fGyroY = (float) IMU_GyroY - DriftGyro_Y;
                     IMU_fGyroZ = (float) IMU_GyroZ - DriftGyro_Z;
 
-#ifdef IMU_DATA_OUT_FILE
-                    imudataout<<IMU_fGyroX<<","<<IMU_fGyroY<<","<<IMU_fGyroZ<<","<<IMU_AccelX<<","<<IMU_AccelY<<","<<IMU_AccelZ<<std::endl;
-#endif
+
                     IMUMessage imumsg;
                     createimumsgfun(&imumsg,
                                     IMU_fGyroX,
@@ -405,6 +403,12 @@ ProducerIMUTask(cartographer_ros::Node* nodeptr) // 生产者任务
                                     (float) IMU_AccelX,
                                     (float) IMU_AccelY,
                                     (float) IMU_AccelZ);
+
+#ifdef IMU_DATA_OUT_FILE
+                    imudataout<<imumsg.angular_velocity.x<<","<<imumsg.angular_velocity.y<<","<<imumsg.angular_velocity.z
+                              <<","<<imumsg.linear_acceleration.x<<","<<imumsg.linear_acceleration.y<<","<<imumsg.linear_acceleration.z<<std::endl;
+#endif
+
                     //imumsg.header.stamp =;
 #ifdef IMU_DEBUG_OUT
                     std::cout<<"imu message sequence : "<<sequence<<std::endl;
