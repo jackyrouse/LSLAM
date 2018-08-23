@@ -146,6 +146,162 @@ AnalyeDataFromHost(unsigned char UnpackBuffer[])
         return 0;
 }
 
+const float NUM[3] = {
+    0.02008336556421123561544384017452102853,
+    0.04016673112842247123088768034904205706,
+    0.02008336556421123561544384017452102853
+};
+const int DL = 3;
+const float DEN[3] = {
+    1,
+    -1.561018075800718163392843962355982512236,
+    0.641351538057563175243558362126350402832
+};
+
+float Gyro_x_configure(float *Gyro_x)
+{
+    static float Data_In_gx[3]  =  {0,0,0};
+    static float Data_Out_gx[3]  = {0,0,0};
+    static float last_gx=0;
+    if(*Gyro_x>3||*Gyro_x<-3)
+    {
+        *Gyro_x = last_gx;
+    }
+    Data_In_gx[0]  =*Gyro_x;
+    Data_Out_gx[0] =-DEN[1]*Data_Out_gx[1]
+        -DEN[2]*Data_Out_gx[2]
+        +NUM[0]*Data_In_gx[0]
+        +NUM[1]*Data_In_gx[1]
+        +NUM[2]*Data_In_gx[2];
+    Data_Out_gx[2] = Data_Out_gx[1];
+    Data_Out_gx[1] = Data_Out_gx[0];
+    Data_In_gx[2]  = Data_In_gx[1];
+    Data_In_gx[1]  = Data_In_gx[0];
+    *Gyro_x = Data_Out_gx[0];
+    last_gx = *Gyro_x;
+    return *Gyro_x;
+}
+
+float Gyro_y_configure(float *Gyro_y)
+{
+    static float Data_In_gy[3]  =  {0,0,0};
+    static float Data_Out_gy[3]  = {0,0,0};
+    static float last_gy=0;
+    if(*Gyro_y>3||*Gyro_y<-3)
+    {
+        *Gyro_y = last_gy;
+    }
+    Data_In_gy[0]=*Gyro_y;
+    Data_Out_gy[0] =-DEN[1]*Data_Out_gy[1]
+        -DEN[2]*Data_Out_gy[2]
+        +NUM[0]*Data_In_gy[0]
+        +NUM[1]*Data_In_gy[1]
+        +NUM[2]*Data_In_gy[2];
+    Data_Out_gy[2] = Data_Out_gy[1];
+    Data_Out_gy[1] = Data_Out_gy[0];
+    Data_In_gy[2]  = Data_In_gy[1];
+    Data_In_gy[1]  = Data_In_gy[0];
+    *Gyro_y = Data_Out_gy[0];
+    last_gy = *Gyro_y;
+    return *Gyro_y;
+}
+
+float Gyro_z_configure(float *Gyro_z)
+{
+    static float Data_In_gz[3]  =  {0,0,0};
+    static float Data_Out_gz[3]  = {0,0,0};
+    static float last_gz=0;
+    if(*Gyro_z>10||*Gyro_z<-10)
+    {
+        *Gyro_z = last_gz;
+    }
+    Data_In_gz[0]=*Gyro_z;
+    Data_Out_gz[0] =-DEN[1]*Data_Out_gz[1]
+        -DEN[2]*Data_Out_gz[2]
+        +NUM[0]*Data_In_gz[0]
+        +NUM[1]*Data_In_gz[1]
+        +NUM[2]*Data_In_gz[2];
+    Data_Out_gz[2] = Data_Out_gz[1];
+    Data_Out_gz[1] = Data_Out_gz[0];
+    Data_In_gz[2]  = Data_In_gz[1];
+    Data_In_gz[1]  = Data_In_gz[0];
+    *Gyro_z = Data_Out_gz[0];
+    last_gz = *Gyro_z;
+    return *Gyro_z;
+}
+
+float Acc_x_configure(float *Acc_x)
+{
+    static float Data_In_ax[3]  =  {0,0,0};
+    static float Data_Out_ax[3]  = {0,0,0};
+    static float last_ax=0;
+    if(*Acc_x>20||*Acc_x<-20)
+    {
+        *Acc_x = last_ax;
+    }
+    Data_In_ax[0]=*Acc_x;
+    Data_Out_ax[0] =-DEN[1]*Data_Out_ax[1]
+        -DEN[2]*Data_Out_ax[2]
+        +NUM[0]*Data_In_ax[0]
+        +NUM[1]*Data_In_ax[1]
+        +NUM[2]*Data_In_ax[2];
+    Data_Out_ax[2] = Data_Out_ax[1];
+    Data_Out_ax[1] = Data_Out_ax[0];
+    Data_In_ax[2]  = Data_In_ax[1];
+    Data_In_ax[1]  = Data_In_ax[0];
+    *Acc_x = Data_Out_ax[0];
+    last_ax = *Acc_x;
+    return *Acc_x;
+}
+
+float Acc_y_configure(float *Acc_y)
+{
+    static float Data_In_ay[3]  =  {0,0,0};
+    static float Data_Out_ay[3]  = {0,0,0};
+    static float last_ay=0;
+    if(*Acc_y>20||*Acc_y<-20)
+    {
+        *Acc_y = last_ay;
+    }
+    Data_In_ay[0]=*Acc_y;
+    Data_Out_ay[0] =-DEN[1]*Data_Out_ay[1]
+        -DEN[2]*Data_Out_ay[2]
+        +NUM[0]*Data_In_ay[0]
+        +NUM[1]*Data_In_ay[1]
+        +NUM[2]*Data_In_ay[2];
+    Data_Out_ay[2] = Data_Out_ay[1];
+    Data_Out_ay[1] = Data_Out_ay[0];
+    Data_In_ay[2]  = Data_In_ay[1];
+    Data_In_ay[1]  = Data_In_ay[0];
+    *Acc_y = Data_Out_ay[0];
+    last_ay = *Acc_y;
+    return *Acc_y;
+}
+
+float Acc_z_configure(float *Acc_z)
+{
+    static float Data_In_az[3]  =  {0,0,0};
+    static float Data_Out_az[3]  = {0,0,0};
+    static float last_az=0;
+    if(*Acc_z>35||*Acc_z<-5)
+    {
+        *Acc_z = last_az;
+    }
+    Data_In_az[0]=*Acc_z;
+    Data_Out_az[0] =-DEN[1]*Data_Out_az[1]
+        -DEN[2]*Data_Out_az[2]
+        +NUM[0]*Data_In_az[0]
+        +NUM[1]*Data_In_az[1]
+        +NUM[2]*Data_In_az[2];
+    Data_Out_az[2] = Data_Out_az[1];
+    Data_Out_az[1] = Data_Out_az[0];
+    Data_In_az[2]  = Data_In_az[1];
+    Data_In_az[1]  = Data_In_az[0];
+    *Acc_z = Data_Out_az[0];
+    last_az = *Acc_z;
+    return *Acc_z;
+}
+
 enum
 {
     BMI055_DATA_MAX = 32767,
@@ -170,55 +326,67 @@ createimumsgfun(IMUMessage *imsg,
     if (IMU_fGyroX > 0)
     {
         IMU_fGyroX = (IMU_fGyroX * BMI055_DPS_MAX * M_PI) / (180.0 * BMI055_DATA_MAX);
+        Gyro_x_configure(&IMU_fGyroX);
     }
     else
     {
         IMU_fGyroX = (IMU_fGyroX * BMI055_DPS_MIN * M_PI) / (180.0 * BMI055_DATA_MIN);
+        Gyro_x_configure(&IMU_fGyroX);
     }
 
     if (IMU_fGyroY > 0)
     {
         IMU_fGyroY = (IMU_fGyroY * BMI055_DPS_MAX * M_PI) / (180.0 * BMI055_DATA_MAX);
+        Gyro_y_configure(&IMU_fGyroY);
     }
     else
     {
         IMU_fGyroY = (IMU_fGyroY * BMI055_DPS_MIN * M_PI) / (180.0 * BMI055_DATA_MIN);
+        Gyro_y_configure(&IMU_fGyroY);
     }
 
     if (IMU_fGyroZ > 0)
     {
         IMU_fGyroZ = (IMU_fGyroZ * BMI055_DPS_MAX * M_PI) / (180.0 * BMI055_DATA_MAX);
+        Gyro_z_configure(&IMU_fGyroZ);
     }
     else
     {
         IMU_fGyroZ = (IMU_fGyroZ * BMI055_DPS_MIN * M_PI) / (180.0 * BMI055_DATA_MIN);
+        Gyro_z_configure(&IMU_fGyroZ);
     }
 
     if (IMU_fAccelX > 0)
     {
         IMU_fAccelX = (IMU_fAccelX * BMI055_G_MAX * G_MPSS) / BMI055_DATA_MAX;
+        Acc_x_configure(&IMU_fAccelX);
     }
     else
     {
         IMU_fAccelX = (IMU_fAccelX * BMI055_G_MIN * G_MPSS) / BMI055_DATA_MIN;
+        Acc_x_configure(&IMU_fAccelX);
     }
 
     if (IMU_fAccelY > 0)
     {
         IMU_fAccelY = (IMU_fAccelY * BMI055_G_MAX * G_MPSS) / BMI055_DATA_MAX;
+        Acc_y_configure(&IMU_fAccelY);
     }
     else
     {
         IMU_fAccelY = (IMU_fAccelY * BMI055_G_MIN * G_MPSS) / BMI055_DATA_MIN;
+        Acc_y_configure(&IMU_fAccelY);
     }
 
     if (IMU_fAccelZ > 0)
     {
         IMU_fAccelZ = (IMU_fAccelZ * BMI055_G_MAX * G_MPSS) / BMI055_DATA_MAX;
+        Acc_z_configure(&IMU_fAccelZ);
     }
     else
     {
         IMU_fAccelZ = (IMU_fAccelZ * BMI055_G_MIN * G_MPSS) / BMI055_DATA_MIN;
+        Acc_z_configure(&IMU_fAccelZ);
     }
 
     imsg->angular_velocity.x = IMU_fGyroX;
@@ -419,7 +587,10 @@ ProducerIMUTask(cartographer_ros::Node* nodeptr) // 生产者任务
                     imumsg.header.seq = sequence;
                     sequence++;
                     imumsg.header.frame_id = "imu";
-                    ProduceIMUItem(&gIMUItemRepository, imumsg);
+                    if(nodeptr->imu_consumer_running_.load(std::memory_order_relaxed) == true)
+                    {
+                        ProduceIMUItem(&gIMUItemRepository, imumsg);
+                    }
                 }
                 break;
             }
@@ -487,9 +658,13 @@ ConsumerIMUTask(cartographer_ros::Node* nodeptr) // 消费者任务
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
 //        usleep(2 * 1000);
-        IMUMessage item = ConsumeIMUItem(&gIMUItemRepository); // 消费一个产品.
+        if(nodeptr->imu_consumer_threadHasStopped_.load(std::memory_order_relaxed) == false)
+        {
+            IMUMessage item = ConsumeIMUItem(&gIMUItemRepository); // 消费一个产品.
 //        nodeptr->HandleImuMessage(0, "imu", std::ref(item));
-        nodeptr->HandleImuMessage(0, "imu", item);
+            nodeptr->HandleImuMessage(0, "imu", item);
+        }
+
 
 
 //        std::cout << "Consume the " << item.header.seq << "^th item" << std::endl;

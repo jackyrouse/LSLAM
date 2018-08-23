@@ -344,7 +344,10 @@ ConsumerLASERTask(cartographer_ros::Node *nodeptr) // 消费者任务
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
         LASERMessage Laseritem = ConsumeLASERItem(&gLASERItemRepository); // 消费一个产品.
         //nodeptr->HandleMultiEchoLaserScanMessage(0, "echoes", std::ref(Laseritem));
-        nodeptr->HandleMultiEchoLaserScanMessage(0, "echoes", Laseritem);
+        if(nodeptr->laser_produce_threadHasStopped_.load(std::memory_order_relaxed) == false)
+        {
+            nodeptr->HandleMultiEchoLaserScanMessage(0, "echoes", Laseritem);
+        }
 //        std::cout << "Consume the " << Laseritem.header.seq << "^th item" << std::endl;
     }
     nodeptr->laser_consumer_threadHasStopped_.store(true, std::memory_order_release);

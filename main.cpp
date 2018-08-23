@@ -187,7 +187,55 @@ mapcreator(cartographer_ros::Node *nodeptr)
 void
 Stop()
 {
-    std::cout << "thread beding to stop " << std::endl;
+    std::cout << "thread begin to stop " << std::endl;
+
+    //end laser consume
+    global_nodeptr->laser_consumer_running_.store(false, std::memory_order_release);//= false;
+    std::cout << "laser consumer wait thread exit " << std::endl;
+    while (global_nodeptr->laser_consumer_threadHasStopped_.load(std::memory_order_relaxed) == false)
+    {
+    };
+    std::cout << "laser consumer thread has exit " << std::endl;
+    if (nullptr == global_nodeptr->laser_consumer_Thread_)
+    {
+        // 必须调用 join, 等待线程真正执行完毕再析构,
+        // 否则析构时thread类调用 terminate 异常
+        global_nodeptr->laser_consumer_Thread_->join();
+        delete global_nodeptr->laser_consumer_Thread_;
+        global_nodeptr->laser_consumer_Thread_ = nullptr;
+    }
+
+    //end imu consumer
+    global_nodeptr->imu_consumer_running_.store(false, std::memory_order_release);//= false;
+    std::cout << "imu consumer wait thread exit " << std::endl;
+    while (global_nodeptr->imu_consumer_threadHasStopped_.load(std::memory_order_relaxed) == false)
+    {
+    };
+    std::cout << "imu consumer thread has exit " << std::endl;
+    if (nullptr == global_nodeptr->imu_consumer_Thread_)
+    {
+        // 必须调用 join, 等待线程真正执行完毕再析构,
+        // 否则析构时thread类调用 terminate 异常
+        global_nodeptr->imu_consumer_Thread_->join();
+        delete global_nodeptr->imu_consumer_Thread_;
+        global_nodeptr->imu_consumer_Thread_ = nullptr;
+    }
+
+    //end laser produce
+    global_nodeptr->laser_produce_running_.store(false, std::memory_order_release);//= false;
+    std::cout << "laser produce wait thread exit " << std::endl;
+    while (global_nodeptr->laser_produce_threadHasStopped_.load(std::memory_order_relaxed) == false)
+    {
+    };
+    std::cout << "laser produce thread has exit " << std::endl;
+    if (nullptr == global_nodeptr->laser_produce_Thread_)
+    {
+        // 必须调用 join, 等待线程真正执行完毕再析构,
+        // 否则析构时thread类调用 terminate 异常
+        global_nodeptr->laser_produce_Thread_->join();
+        delete global_nodeptr->laser_produce_Thread_;
+        global_nodeptr->laser_produce_Thread_ = nullptr;
+    }
 
     //end imu produce;
     global_nodeptr->imu_produce_running_.store(false, std::memory_order_release);//= false;
@@ -204,55 +252,6 @@ Stop()
         delete global_nodeptr->imu_produce_Thread_;
         global_nodeptr->imu_produce_Thread_ = nullptr;
     }
-
-    //end imu consumer
-    global_nodeptr->imu_consumer_running_.store(false, std::memory_order_release);//= false;
-    std::cout << "imu produce wait thread exit " << std::endl;
-    while (global_nodeptr->imu_consumer_threadHasStopped_.load(std::memory_order_relaxed) == false)
-    {
-    };
-    std::cout << "imu produce thread has exit " << std::endl;
-    if (nullptr == global_nodeptr->imu_consumer_Thread_)
-    {
-        // 必须调用 join, 等待线程真正执行完毕再析构,
-        // 否则析构时thread类调用 terminate 异常
-        global_nodeptr->imu_consumer_Thread_->join();
-        delete global_nodeptr->imu_consumer_Thread_;
-        global_nodeptr->imu_consumer_Thread_ = nullptr;
-    }
-
-    //end laser produce
-    global_nodeptr->laser_produce_running_.store(false, std::memory_order_release);//= false;
-    std::cout << "imu produce wait thread exit " << std::endl;
-    while (global_nodeptr->laser_produce_threadHasStopped_.load(std::memory_order_relaxed) == false)
-    {
-    };
-    std::cout << "imu produce thread has exit " << std::endl;
-    if (nullptr == global_nodeptr->laser_produce_Thread_)
-    {
-        // 必须调用 join, 等待线程真正执行完毕再析构,
-        // 否则析构时thread类调用 terminate 异常
-        global_nodeptr->laser_produce_Thread_->join();
-        delete global_nodeptr->laser_produce_Thread_;
-        global_nodeptr->laser_produce_Thread_ = nullptr;
-    }
-
-    //end laser consume
-    global_nodeptr->laser_consumer_running_.store(false, std::memory_order_release);//= false;
-    std::cout << "imu produce wait thread exit " << std::endl;
-    while (global_nodeptr->laser_consumer_threadHasStopped_.load(std::memory_order_relaxed) == false)
-    {
-    };
-    std::cout << "imu produce thread has exit " << std::endl;
-    if (nullptr == global_nodeptr->laser_consumer_Thread_)
-    {
-        // 必须调用 join, 等待线程真正执行完毕再析构,
-        // 否则析构时thread类调用 terminate 异常
-        global_nodeptr->laser_consumer_Thread_->join();
-        delete global_nodeptr->laser_consumer_Thread_;
-        global_nodeptr->laser_consumer_Thread_ = nullptr;
-    }
-
     return;
 }
 
